@@ -1,7 +1,14 @@
 package me.masterbear;
 
-import java.io.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
+/**
+ * 字节输出
+ *
+ * @author jugg
+ */
 public class BitWriter {
 
     int pos = 0;
@@ -25,9 +32,9 @@ public class BitWriter {
 
     private void writeInt(int val) {
         try {
-            fileOutputStream.write(new byte[]{(byte) ((val & (0xFF000000))>>24)});
-            fileOutputStream.write(new byte[]{(byte) ((val & (0x00FF0000))>>16)});
-            fileOutputStream.write(new byte[]{(byte) ((val & (0x0000FF00))>>8)});
+            fileOutputStream.write(new byte[]{(byte) ((val & (0xFF000000)) >> 24)});
+            fileOutputStream.write(new byte[]{(byte) ((val & (0x00FF0000)) >> 16)});
+            fileOutputStream.write(new byte[]{(byte) ((val & (0x0000FF00)) >> 8)});
             fileOutputStream.write(new byte[]{(byte) ((val & (0x000000FF)))});
         } catch (IOException e) {
             e.printStackTrace();

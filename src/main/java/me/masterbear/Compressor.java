@@ -1,22 +1,52 @@
 package me.masterbear;
 
 
-import java.io.*;
-import java.util.Comparator;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.HashMap;
-import java.util.PriorityQueue;
 
+/**
+ * 压缩核心类
+ */
 public class Compressor {
 
+    /**
+     * 表长度
+     */
     final static int TABLE_LENGTH = 256;
+    /**
+     * 偏移量
+     */
     final static int OFFSET = 128;
+    /**
+     * 需要压缩的文件名
+     */
     final String filename;
+    /**
+     * 编码表
+     */
     final HashMap<Byte, String> encodeTable = new HashMap<>();
+    /**
+     * 解码表
+     */
     final HashMap<String, Byte> decodeTable = new HashMap<>();
+    /**
+     *
+     */
     int[] fre = new int[256];
+    /**
+     * 总原始字节
+     */
     int totalOriginByte;
+    /**
+     * 总压缩位
+     */
     int totalCompressedBit;
 
+    /**
+     * 树节点
+     */
     CNode root;
 
     public Compressor(String file) {
@@ -25,22 +55,33 @@ public class Compressor {
 
     private void init() {
         genFreTable();
-        generateTree();
+        root = TreeGenerator.generateTree(TABLE_LENGTH, fre, OFFSET);
         processTree();
     }
 
+    /**
+     * 获取输入流
+     *
+     * @param filename 文件名
+     * @return 输入流
+     */
     BufferedInputStream getReader(String filename) {
         FileInputStream f = null;
         try {
+            // 读取目标文件的输入流
             f = new FileInputStream(filename);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            // 退出程序
             System.exit(-1);
         }
         return new BufferedInputStream(f);
     }
 
 
+    /**
+     *
+     */
     void genFreTable() {
         BufferedInputStream r = getReader(filename);
         byte[] buf = new byte[1024];
@@ -63,26 +104,6 @@ public class Compressor {
         System.out.println("Total:" + total + " bytes");
     }
 
-    private void generateTree() {
-        PriorityQueue<CNode> q = new PriorityQueue<>(Comparator.comparing(CNode::getFreq));
-        for (int i = 0; i < TABLE_LENGTH; i++) {
-            if (fre[i] == 0) continue;
-            q.add(new CNode((byte) (i - OFFSET), fre[i], true));
-        }
-
-        while (q.size() != 1) {
-            CNode left = q.poll();
-            CNode right = q.poll();
-            assert left != null;
-            assert right != null;
-            CNode t = new CNode((byte) 0, left.freq + right.freq, false);
-            t.ch[0] = left;
-            t.ch[1] = right;
-            q.add(t);
-        }
-        root = q.peek();
-    }
-
     void processTree() {
         dfs(root, "");
         for (byte b : encodeTable.keySet()) {
@@ -98,7 +119,6 @@ public class Compressor {
             encodeTable.put(root.val, cur);
             //return;
         }
-
         dfs(root.ch[0], cur + "0");
         dfs(root.ch[1], cur + "1");
     }

@@ -1,11 +1,19 @@
 package me.masterbear;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.PriorityQueue;
 
+import static me.masterbear.TreeGenerator.generateTree;
+
+/**
+ * 解压核心类
+ *
+ * @author jugg
+ */
 public class DeCompressor {
 
     int tableLength;
@@ -20,26 +28,6 @@ public class DeCompressor {
         this.filename = filename;
     }
 
-    public void generateTree() {
-        PriorityQueue<CNode> q = new PriorityQueue<>(Comparator.comparing(CNode::getFreq));
-        for (int i = 0; i < tableLength; i++) {
-            if (fre[i] == 0) continue;
-            q.add(new CNode((byte) (i - OFFSET), fre[i], true));
-        }
-
-        while (q.size() != 1) {
-            CNode left = q.poll();
-            CNode right = q.poll();
-            assert left != null;
-            assert right != null;
-            CNode t = new CNode((byte) 0, left.freq + right.freq, false);
-            t.ch[0] = left;
-            t.ch[1] = right;
-            q.add(t);
-        }
-        root = q.peek();
-
-    }
 
     private static int readInt(InputStream inputStream) {
         byte[] b = new byte[1];
@@ -50,7 +38,9 @@ public class DeCompressor {
             while (inputStream.read(b) > 0) {
                 l++;
                 int val = (int) b[0];
-                if (val < 0) val += 256;
+                if (val < 0) {
+                    val += 256;
+                }
                 ans = (ans | (val << offset));
                 offset -= 8;
                 if (l == 4) {
@@ -80,7 +70,7 @@ public class DeCompressor {
 
     void processTree(BufferedInputStream in) {
         readHead(in);
-        generateTree();
+        root = generateTree(tableLength, fre, OFFSET);
     }
 
     public void decompress(String to) {
